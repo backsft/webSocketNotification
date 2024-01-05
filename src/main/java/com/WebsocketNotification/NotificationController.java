@@ -1,21 +1,44 @@
 package com.WebsocketNotification;
 
+import java.util.List;
+
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class NotificationController {
 
-    private final NotificationService notificationService;
+	private final NotificationService notificationService;
 
-    public NotificationController(NotificationService notificationService) {
-        this.notificationService = notificationService;
-    }
+	public NotificationController(NotificationService notificationService) {
+		this.notificationService = notificationService;
+	}
 
-    @GetMapping("/notificationsendtest")
-    public String sendTestNotification() {
-        Notification notification = new Notification("Test Notification");
-        notificationService.sendNotification(notification);
-        return "Notification sent!";
-    }
+	@MessageMapping("/sendNotification")
+	@SendTo("/topic/notifications")
+	public Notification sendNotificationMessage(Notification request) {
+		Notification notification = createAndSendNotification(request.getMessage());
+		return notification;
+	}
+
+	@PostMapping("/sendNotificationHttp")
+	public void sendNotificationHttp(@RequestBody Notification request) {
+		createAndSendNotification(request.getMessage());
+	}
+
+	@GetMapping("/notifications")
+	public List<Notification> getAllNotifications() {
+		return notificationService.getAllNotifications();
+	}
+
+	private Notification createAndSendNotification(String message) {
+		Notification notification = new Notification();
+		notification.setMessage(message);
+		notificationService.sendNotification(notification);
+		return notification;
+	}
 }
